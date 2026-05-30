@@ -1,0 +1,31 @@
+import axios from 'axios';
+
+const API_URL = 'http://localhost:8080/api';
+
+const api = axios.create({
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json',
+    },
+});
+
+// Eleves
+export const getEleves = () => api.get('/eleves');
+export const getEleveById = (id) => api.get(`/eleves/${id}`);
+export const createEleve = (eleve) => api.post('/eleves', eleve);
+export const updateEleve = (id, eleve) => api.put(`/eleves/${id}`, eleve);
+export const deleteEleve = (id) => api.delete(`/eleves/${id}`);
+
+// Matieres
+export const getMatieres = () => api.get('/matieres');
+export const createMatiere = (matiere) => api.post('/matieres', matiere);
+export const deleteMatiere = (id) => api.delete(`/matieres/${id}`);
+
+// Notes
+export const getNotes = () => api.get('/notes');
+export const getNotesByEleve = (eleveId) => api.get(`/notes/eleve/${eleveId}`);
+export const createNote = (note) => api.post('/notes', note);
+export const deleteNote = (id) => api.delete(`/notes/${id}`);
+export const getMoyenne = (eleveId, trimestre) => api.get(`/notes/moyenne/eleve/${eleveId}/trimestre/${trimestre}`);
+
+export default api;
