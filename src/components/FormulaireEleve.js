@@ -3,7 +3,6 @@ import { createEleve, getClasses } from '../services/api';
 
 function FormulaireEleve({ onEleveAjoute }) {
     const [eleve, setEleve] = useState({
-        matricule: '',
         nom: '',
         prenom: '',
         dateNaissance: '',
@@ -12,6 +11,7 @@ function FormulaireEleve({ onEleveAjoute }) {
         classe: null,
     });
     const [classes, setClasses] = useState([]);
+    const [erreur, setErreur] = useState('');
 
     useEffect(() => {
         chargerClasses();
@@ -39,9 +39,9 @@ function FormulaireEleve({ onEleveAjoute }) {
         e.preventDefault();
         try {
             await createEleve(eleve);
+            setErreur('');
             onEleveAjoute();
             setEleve({
-                matricule: '',
                 nom: '',
                 prenom: '',
                 dateNaissance: '',
@@ -50,7 +50,7 @@ function FormulaireEleve({ onEleveAjoute }) {
                 classe: null,
             });
         } catch (error) {
-            console.error('Erreur création élève', error);
+            setErreur('Erreur lors de la création de l\'élève.');
         }
     };
 
@@ -58,7 +58,6 @@ function FormulaireEleve({ onEleveAjoute }) {
         <div>
             <h3>Ajouter un élève</h3>
             <form onSubmit={handleSubmit}>
-                <input name="matricule" placeholder="Matricule" value={eleve.matricule} onChange={handleChange} required /><br />
                 <input name="nom" placeholder="Nom" value={eleve.nom} onChange={handleChange} required /><br />
                 <input name="prenom" placeholder="Prénom" value={eleve.prenom} onChange={handleChange} required /><br />
                 <input name="dateNaissance" type="date" value={eleve.dateNaissance} onChange={handleChange} required /><br />
@@ -71,6 +70,7 @@ function FormulaireEleve({ onEleveAjoute }) {
                     ))}
                 </select><br />
                 <button type="submit">Ajouter</button>
+                {erreur && <p style={{ color: 'red' }}>{erreur}</p>}
             </form>
         </div>
     );
