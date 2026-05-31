@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getMatieres, createMatiere, deleteMatiere } from '../services/api';
+import { getMatieres, createMatiere, deleteMatiere, updateMatiere } from '../services/api';
 
 function Matieres() {
     const [matieres, setMatieres] = useState([]);
     const [matiere, setMatiere] = useState({ nom: '', coefficient: '' });
-    const [erreur, setErreur] = useState('')
+    const [matiereEditee, setMatiereEditee] = useState(null);
+    const [erreur, setErreur] = useState('');
 
     useEffect(() => {
         chargerMatieres();
@@ -42,6 +43,25 @@ function Matieres() {
         }
     };
 
+    const handleEdit = (matiere) => {
+        setMatiereEditee({ ...matiere });
+    };
+
+    const handleEditChange = (e) => {
+        setMatiereEditee({ ...matiereEditee, [e.target.name]: e.target.value });
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await updateMatiere(matiereEditee.id, matiereEditee);
+            setMatiereEditee(null);
+            chargerMatieres();
+        } catch (error) {
+            setErreur('Une matière avec ce nom existe déjà !');
+        }
+    };
+
     return (
         <div>
             <h2>Liste des Matières</h2>
@@ -53,6 +73,18 @@ function Matieres() {
                 <button type="submit">Ajouter</button>
                 {erreur && <p style={{ color: 'red' }}>{erreur}</p>}
             </form>
+
+            {matiereEditee && (
+                <div style={{ border: '1px solid orange', padding: '10px', marginBottom: '10px' }}>
+                    <h3>Modifier la matière : {matiereEditee.nom}</h3>
+                    <form onSubmit={handleEditSubmit}>
+                        <input name="nom" placeholder="Nom" value={matiereEditee.nom} onChange={handleEditChange} required /><br />
+                        <input name="coefficient" type="number" step="0.5" placeholder="Coefficient" value={matiereEditee.coefficient} onChange={handleEditChange} required /><br />
+                        <button type="submit">Enregistrer</button>
+                        <button type="button" onClick={() => setMatiereEditee(null)} style={{ marginLeft: '10px' }}>Annuler</button>
+                    </form>
+                </div>
+            )}
 
             <br />
             <table border="1">
@@ -69,9 +101,8 @@ function Matieres() {
                         <td>{m.nom}</td>
                         <td>{m.coefficient}</td>
                         <td>
-                            <button onClick={() => supprimerMatiere(m.id)}>
-                                Supprimer
-                            </button>
+                            <button onClick={() => handleEdit(m)}>Modifier</button>
+                            <button onClick={() => supprimerMatiere(m.id)} style={{ marginLeft: '5px' }}>Supprimer</button>
                         </td>
                     </tr>
                 ))}

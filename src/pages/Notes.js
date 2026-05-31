@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getEleves, getMatieres, createNote, getNotesByEleve, deleteNote } from '../services/api';
+import { getEleves, getMatieres, createNote, getNotesByEleve, deleteNote, updateNote } from '../services/api';
 
 function Notes() {
     const [eleves, setEleves] = useState([]);
     const [matieres, setMatieres] = useState([]);
     const [notes, setNotes] = useState([]);
+    const [noteEditee, setNoteEditee] = useState(null);
     const [eleveSelectionne, setEleveSelectionne] = useState('');
     const [trimestreSelectionne, setTrimestreSelectionne] = useState('');
     const [note, setNote] = useState({
@@ -28,6 +29,29 @@ function Notes() {
     const chargerMatieres = async () => {
         const response = await getMatieres();
         setMatieres(response.data);
+    };
+
+    const handleEdit = (note) => {
+        setNoteEditee({ ...note, matiere: note.matiere, eleve: note.eleve });
+    };
+
+    const handleEditChange = (e) => {
+        setNoteEditee({ ...noteEditee, [e.target.name]: e.target.value });
+    };
+
+    const handleEditMatiereChange = (e) => {
+        setNoteEditee({ ...noteEditee, matiere: { id: e.target.value } });
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await updateNote(noteEditee.id, noteEditee);
+            setNoteEditee(null);
+            chargerNotes(eleveSelectionne);
+        } catch (error) {
+            console.error('Erreur modification note', error);
+        }
     };
 
     const chargerNotes = async (eleveId) => {
@@ -127,6 +151,23 @@ function Notes() {
                         <button type="submit">Ajouter la note</button>
                     </form>
 
+                    {noteEditee && (
+                        <div style={{ border: '1px solid orange', padding: '10px', marginBottom: '10px' }}>
+                            <h3>Modifier la note</h3>
+                            <form onSubmit={handleEditSubmit}>
+                                <select onChange={handleEditMatiereChange} defaultValue={noteEditee.matiere ? noteEditee.matiere.id : ''} required>
+                                    <option value="">-- Choisir une matière --</option>
+                                    {matieres.map((m) => (
+                                        <option key={m.id} value={m.id}>{m.nom}</option>
+                                    ))}
+                                </select><br />
+                                <input name="valeur" type="number" step="0.5" min="0" max="20" value={noteEditee.valeur} onChange={handleEditChange} required /><br />
+                                <input name="dateNote" type="date" value={noteEditee.dateNote} onChange={handleEditChange} required /><br />
+                                <button type="submit">Enregistrer</button>
+                                <button type="button" onClick={() => setNoteEditee(null)} style={{ marginLeft: '10px' }}>Annuler</button>
+                            </form>
+                        </div>
+                    )}
                     <h3>Notes du trimestre</h3>
                     <table border="1">
                         <thead>
@@ -148,7 +189,8 @@ function Notes() {
                                     <td>{n.dateNote}</td>
                                     <td>{n.trimestre.replace('_', ' ')}</td>
                                     <td>
-                                        <button onClick={() => supprimerNote(n.id)}>Supprimer</button>
+                                        <button onClick={() => handleEdit(n)}>Modifier</button>
+                                        <button onClick={() => supprimerNote(n.id)} style={{ marginLeft: '5px' }}>Supprimer</button>
                                     </td>
                                 </tr>
                             ))}

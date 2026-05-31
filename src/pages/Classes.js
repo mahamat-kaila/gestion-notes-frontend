@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getClasses, createClasse, deleteClasse } from '../services/api';
+import { getClasses, createClasse, deleteClasse, updateClasse } from '../services/api';
 
 function Classes({ onClassesChange }) {
     const [classes, setClasses] = useState([]);
     const [classe, setClasse] = useState({ nom: '' });
+    const [classeEditee, setClasseEditee] = useState(null);
+    const [erreur, setErreur] = useState('');
 
     useEffect(() => {
         chargerClasses();
@@ -22,8 +24,6 @@ function Classes({ onClassesChange }) {
     const handleChange = (e) => {
         setClasse({ ...classe, [e.target.name]: e.target.value });
     };
-
-    const [erreur, setErreur] = useState('');
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -44,6 +44,25 @@ function Classes({ onClassesChange }) {
         }
     };
 
+    const handleEdit = (classe) => {
+        setClasseEditee({ ...classe });
+    };
+
+    const handleEditChange = (e) => {
+        setClasseEditee({ ...classeEditee, [e.target.name]: e.target.value });
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await updateClasse(classeEditee.id, classeEditee);
+            setClasseEditee(null);
+            chargerClasses();
+        } catch (error) {
+            setErreur('Une classe avec ce nom existe déjà !');
+        }
+    };
+
     return (
         <div>
             <h2>Liste des Classes</h2>
@@ -54,6 +73,17 @@ function Classes({ onClassesChange }) {
                 <button type="submit">Ajouter</button>
                 {erreur && <p style={{ color: 'red' }}>{erreur}</p>}
             </form>
+
+            {classeEditee && (
+                <div style={{ border: '1px solid orange', padding: '10px', marginBottom: '10px' }}>
+                    <h3>Modifier la classe : {classeEditee.nom}</h3>
+                    <form onSubmit={handleEditSubmit}>
+                        <input name="nom" placeholder="Nom" value={classeEditee.nom} onChange={handleEditChange} required /><br />
+                        <button type="submit">Enregistrer</button>
+                        <button type="button" onClick={() => setClasseEditee(null)} style={{ marginLeft: '10px' }}>Annuler</button>
+                    </form>
+                </div>
+            )}
 
             <br />
             <table border="1">
@@ -70,9 +100,8 @@ function Classes({ onClassesChange }) {
                         <td>{c.nom}</td>
                         <td>{c.effectif}</td>
                         <td>
-                            <button onClick={() => supprimerClasse(c.id)}>
-                                Supprimer
-                            </button>
+                            <button onClick={() => handleEdit(c)}>Modifier</button>
+                            <button onClick={() => supprimerClasse(c.id)} style={{ marginLeft: '5px' }}>Supprimer</button>
                         </td>
                     </tr>
                 ))}

@@ -20,6 +20,7 @@ export const deleteEleve = (id) => api.delete(`/eleves/${id}`);
 export const getMatieres = () => api.get('/matieres');
 export const createMatiere = (matiere) => api.post('/matieres', matiere);
 export const deleteMatiere = (id) => api.delete(`/matieres/${id}`);
+export const updateMatiere = (id, matiere) => api.put(`/matieres/${id}`, matiere);
 
 // Notes
 export const getNotes = () => api.get('/notes');
@@ -27,15 +28,22 @@ export const getNotesByEleve = (eleveId) => api.get(`/notes/eleve/${eleveId}`);
 export const createNote = (note) => api.post('/notes', note);
 export const deleteNote = (id) => api.delete(`/notes/${id}`);
 export const getMoyenne = (eleveId, trimestre) => api.get(`/notes/moyenne/eleve/${eleveId}/trimestre/${trimestre}`);
+export const updateNote = (id, note) => api.put(`/notes/${id}`, note);
 
+// Professeur
 export const getProfesseurs = () => api.get('/professeurs');
 export const createProfesseur = (professeur) => api.post('/professeurs', professeur);
 export const deleteProfesseur = (id) => api.delete(`/professeurs/${id}`);
+export const updateProfesseur = (id, professeur) => api.put(`/professeurs/${id}`, professeur);
+
+// Affectation
 export const getAffectations = () => api.get('/affectations');
 export const createAffectation = (affectation) => api.post('/affectations', affectation);
 export const deleteAffectation = (id) => api.delete(`/affectations/${id}`);
 
+// Classes
 export const getClasses = () => api.get('/classes');
 export const createClasse = (classe) => api.post('/classes', classe);
 export const deleteClasse = (id) => api.delete(`/classes/${id}`);
+export const updateClasse = (id, classe) => api.put(`/classes/${id}`, classe);
 export default api;

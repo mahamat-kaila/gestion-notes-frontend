@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { getProfesseurs, createProfesseur, deleteProfesseur, getMatieres, getClasses, createAffectation, getAffectations } from '../services/api';
+import { getProfesseurs, createProfesseur, deleteProfesseur, getMatieres, getClasses, createAffectation, getAffectations, updateProfesseur } from '../services/api';
 function Professeurs() {
     const [professeurs, setProfesseurs] = useState([]);
     const [matieres, setMatieres] = useState([]);
     const [classes, setClasses] = useState([]);
     const [affectations, setAffectations] = useState([]);
+    const [professeurEdite, setProfesseurEdite] = useState(null);
     const [professeur, setProfesseur] = useState({
         nom: '', prenom: '', telephone: '', email: '', adresse: ''
     });
@@ -28,6 +29,25 @@ function Professeurs() {
     const chargerMatieres = async () => {
         const response = await getMatieres();
         setMatieres(response.data);
+    };
+
+    const handleEdit = (professeur) => {
+        setProfesseurEdite({ ...professeur });
+    };
+
+    const handleEditChange = (e) => {
+        setProfesseurEdite({ ...professeurEdite, [e.target.name]: e.target.value });
+    };
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            await updateProfesseur(professeurEdite.id, professeurEdite);
+            setProfesseurEdite(null);
+            chargerProfesseurs();
+        } catch (error) {
+            setErreur('Un professeur avec cet email existe déjà !');
+        }
     };
 
     const chargerClasses = async () => {
@@ -97,6 +117,20 @@ function Professeurs() {
             </form>
 
             <br />
+            {professeurEdite && (
+                <div style={{ border: '1px solid orange', padding: '10px', marginBottom: '10px' }}>
+                    <h3>Modifier le professeur : {professeurEdite.nom} {professeurEdite.prenom}</h3>
+                    <form onSubmit={handleEditSubmit}>
+                        <input name="nom" placeholder="Nom" value={professeurEdite.nom} onChange={handleEditChange} required /><br />
+                        <input name="prenom" placeholder="Prénom" value={professeurEdite.prenom} onChange={handleEditChange} required /><br />
+                        <input name="telephone" placeholder="Téléphone" value={professeurEdite.telephone} onChange={handleEditChange} required /><br />
+                        <input name="email" type="email" placeholder="Email" value={professeurEdite.email} onChange={handleEditChange} required /><br />
+                        <input name="adresse" placeholder="Adresse" value={professeurEdite.adresse} onChange={handleEditChange} required /><br />
+                        <button type="submit">Enregistrer</button>
+                        <button type="button" onClick={() => setProfesseurEdite(null)} style={{ marginLeft: '10px' }}>Annuler</button>
+                    </form>
+                </div>
+            )}
             <table border="1">
                 <thead>
                 <tr>
@@ -134,7 +168,8 @@ function Professeurs() {
                             ))}
                         </td>
                         <td>
-                            <button onClick={() => supprimerProfesseur(p.id)}>Supprimer</button>
+                            <button onClick={() => handleEdit(p)}>Modifier</button>
+                            <button onClick={() => supprimerProfesseur(p.id)} style={{ marginLeft: '5px' }}>Supprimer</button>
                         </td>
                     </tr>
                 ))}
