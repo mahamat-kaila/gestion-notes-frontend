@@ -3,6 +3,7 @@ import Classes from './pages/Classes';
 import Eleves from './pages/Eleves';
 import Matieres from './pages/Matieres';
 import Notes from './pages/Notes';
+import Professeurs from './pages/Professeurs';
 
 function App() {
     const [page, setPage] = useState('classes');
@@ -24,12 +25,16 @@ function App() {
                 <button onClick={() => setPage('notes')} style={{ marginRight: '10px' }}>
                     Notes
                 </button>
+                <button onClick={() => setPage('professeurs')} style={{ marginRight: '10px' }}>
+                    Professeurs
+                </button>
             </nav>
 
             {page === 'classes' && <Classes />}
             {page === 'eleves' && <Eleves />}
             {page === 'matieres' && <Matieres />}
             {page === 'notes' && <Notes />}
+            {page === 'professeurs' && <Professeurs />}
         </div>
     );
 }
