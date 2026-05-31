@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { createEleve } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { createEleve, getClasses } from '../services/api';
 
 function FormulaireEleve({ onEleveAjoute }) {
     const [eleve, setEleve] = useState({
@@ -9,11 +9,30 @@ function FormulaireEleve({ onEleveAjoute }) {
         dateNaissance: '',
         lieuNaissance: '',
         numeroParent: '',
-        classe: '',
+        classe: null,
     });
+    const [classes, setClasses] = useState([]);
+
+    useEffect(() => {
+        chargerClasses();
+    }, []);
+
+    const chargerClasses = async () => {
+        try {
+            const response = await getClasses();
+            setClasses(response.data);
+        } catch (error) {
+            console.error('Erreur chargement classes', error);
+        }
+    };
 
     const handleChange = (e) => {
         setEleve({ ...eleve, [e.target.name]: e.target.value });
+    };
+
+    const handleClasseChange = (e) => {
+        const classeId = e.target.value;
+        setEleve({ ...eleve, classe: classeId ? { id: classeId } : null });
     };
 
     const handleSubmit = async (e) => {
@@ -28,10 +47,10 @@ function FormulaireEleve({ onEleveAjoute }) {
                 dateNaissance: '',
                 lieuNaissance: '',
                 numeroParent: '',
-                classe: '',
+                classe: null,
             });
         } catch (error) {
-            console.error('Erreur lors de la création', error);
+            console.error('Erreur création élève', error);
         }
     };
 
@@ -45,7 +64,12 @@ function FormulaireEleve({ onEleveAjoute }) {
                 <input name="dateNaissance" type="date" value={eleve.dateNaissance} onChange={handleChange} required /><br />
                 <input name="lieuNaissance" placeholder="Lieu de naissance" value={eleve.lieuNaissance} onChange={handleChange} required /><br />
                 <input name="numeroParent" placeholder="Numéro parent" value={eleve.numeroParent} onChange={handleChange} required /><br />
-                <input name="classe" placeholder="Classe" value={eleve.classe} onChange={handleChange} required /><br />
+                <select onChange={handleClasseChange} required>
+                    <option value="">-- Choisir une classe --</option>
+                    {classes.map((c) => (
+                        <option key={c.id} value={c.id}>{c.nom}</option>
+                    ))}
+                </select><br />
                 <button type="submit">Ajouter</button>
             </form>
         </div>

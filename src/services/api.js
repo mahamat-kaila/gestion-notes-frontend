@@ -28,4 +28,8 @@ export const createNote = (note) => api.post('/notes', note);
 export const deleteNote = (id) => api.delete(`/notes/${id}`);
 export const getMoyenne = (eleveId, trimestre) => api.get(`/notes/moyenne/eleve/${eleveId}/trimestre/${trimestre}`);
 
+
+export const getClasses = () => api.get('/classes');
+export const createClasse = (classe) => api.post('/classes', classe);
+export const deleteClasse = (id) => api.delete(`/classes/${id}`);
 export default api;

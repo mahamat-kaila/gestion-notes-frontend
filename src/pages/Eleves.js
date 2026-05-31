@@ -46,7 +46,7 @@ function Eleves() {
                         <td>{eleve.matricule}</td>
                         <td>{eleve.nom}</td>
                         <td>{eleve.prenom}</td>
-                        <td>{eleve.classe}</td>
+                        <td>{eleve.classe ? eleve.classe.nom : '-'}</td>
                         <td>
                             <button onClick={() => supprimerEleve(eleve.id)}>
                                 Supprimer
