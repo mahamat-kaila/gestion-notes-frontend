@@ -6,9 +6,10 @@ function Notes() {
     const [matieres, setMatieres] = useState([]);
     const [notes, setNotes] = useState([]);
     const [eleveSelectionne, setEleveSelectionne] = useState('');
+    const [trimestreSelectionne, setTrimestreSelectionne] = useState('');
     const [note, setNote] = useState({
         valeur: '',
-        dateNote: '',
+        dateNote: new Date().toISOString().split('T')[0],
         trimestre: '',
         eleve: null,
         matiere: null,
@@ -40,6 +41,11 @@ function Notes() {
         setNote({ ...note, eleve: { id: e.target.value } });
     };
 
+    const handleTrimestreChange = (e) => {
+        setTrimestreSelectionne(e.target.value);
+        setNote({ ...note, trimestre: e.target.value });
+    };
+
     const handleChange = (e) => {
         setNote({ ...note, [e.target.name]: e.target.value });
     };
@@ -52,7 +58,12 @@ function Notes() {
         e.preventDefault();
         await createNote(note);
         chargerNotes(eleveSelectionne);
-        setNote({ ...note, valeur: '', dateNote: '', trimestre: '', matiere: null });
+        setNote({
+            ...note,
+            valeur: '',
+            dateNote: new Date().toISOString().split('T')[0],
+            matiere: null,
+        });
     };
 
     const supprimerNote = async (id) => {
@@ -66,7 +77,8 @@ function Notes() {
         <div>
             <h2>Gestion des Notes</h2>
 
-            <h3>Choisir un élève</h3>
+            {/* Étape 1 : Choisir élève et trimestre */}
+            <h3>Étape 1 — Choisir l'élève et le trimestre</h3>
             <select onChange={handleEleveChange} value={eleveSelectionne}>
                 <option value="">-- Choisir un élève --</option>
                 {eleves.map((e) => (
@@ -75,29 +87,47 @@ function Notes() {
                     </option>
                 ))}
             </select>
+            <br /><br />
+            <select onChange={handleTrimestreChange} value={trimestreSelectionne}>
+                <option value="">-- Choisir un trimestre --</option>
+                <option value="TRIMESTRE_1">Trimestre 1</option>
+                <option value="TRIMESTRE_2">Trimestre 2</option>
+                <option value="TRIMESTRE_3">Trimestre 3</option>
+            </select>
 
-            {eleveSelectionne && (
+            {/* Étape 2 : Ajouter une note (visible seulement si élève et trimestre choisis) */}
+            {eleveSelectionne && trimestreSelectionne && (
                 <>
-                    <h3>Ajouter une note</h3>
+                    <h3>Étape 2 — Ajouter une note</h3>
                     <form onSubmit={handleSubmit}>
                         <select name="matiere" onChange={handleMatiereChange} required>
                             <option value="">-- Choisir une matière --</option>
                             {matieres.map((m) => (
-                                <option key={m.id} value={m.id}>{m.nom}</option>
+                                <option key={m.id} value={m.id}>{m.nom} (coeff {m.coefficient})</option>
                             ))}
                         </select><br />
-                        <input name="valeur" type="number" step="0.5" min="0" max="20" placeholder="Note /20" value={note.valeur} onChange={handleChange} required /><br />
-                        <input name="dateNote" type="date" value={note.dateNote} onChange={handleChange} required /><br />
-                        <select name="trimestre" value={note.trimestre} onChange={handleChange} required>
-                            <option value="">-- Choisir un trimestre --</option>
-                            <option value="TRIMESTRE_1">Trimestre 1</option>
-                            <option value="TRIMESTRE_2">Trimestre 2</option>
-                            <option value="TRIMESTRE_3">Trimestre 3</option>
-                        </select><br />
+                        <input
+                            name="valeur"
+                            type="number"
+                            step="0.5"
+                            min="0"
+                            max="20"
+                            placeholder="Note /20"
+                            value={note.valeur}
+                            onChange={handleChange}
+                            required
+                        /><br />
+                        <input
+                            name="dateNote"
+                            type="date"
+                            value={note.dateNote}
+                            onChange={handleChange}
+                            required
+                        /><br />
                         <button type="submit">Ajouter la note</button>
                     </form>
 
-                    <h3>Notes de l'élève</h3>
+                    <h3>Notes du trimestre</h3>
                     <table border="1">
                         <thead>
                         <tr>
@@ -109,17 +139,19 @@ function Notes() {
                         </tr>
                         </thead>
                         <tbody>
-                        {notes.map((n) => (
-                            <tr key={n.id}>
-                                <td>{n.matiere ? n.matiere.nom : '-'}</td>
-                                <td>{n.valeur}/20</td>
-                                <td>{n.dateNote}</td>
-                                <td>{n.trimestre}</td>
-                                <td>
-                                    <button onClick={() => supprimerNote(n.id)}>Supprimer</button>
-                                </td>
-                            </tr>
-                        ))}
+                        {notes
+                            .filter((n) => n.trimestre === trimestreSelectionne)
+                            .map((n) => (
+                                <tr key={n.id}>
+                                    <td>{n.matiere ? n.matiere.nom : '-'}</td>
+                                    <td>{n.valeur}/20</td>
+                                    <td>{n.dateNote}</td>
+                                    <td>{n.trimestre.replace('_', ' ')}</td>
+                                    <td>
+                                        <button onClick={() => supprimerNote(n.id)}>Supprimer</button>
+                                    </td>
+                                </tr>
+                            ))}
                         </tbody>
                     </table>
                 </>
