@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import Classes from './pages/Classes';
 import Eleves from './pages/Eleves';
 import Matieres from './pages/Matieres';
-import Classes from './pages/Classes';
+import Notes from './pages/Notes';
 
 function App() {
     const [page, setPage] = useState('classes');
@@ -20,11 +21,15 @@ function App() {
                 <button onClick={() => setPage('matieres')} style={{ marginRight: '10px' }}>
                     Matières
                 </button>
+                <button onClick={() => setPage('notes')} style={{ marginRight: '10px' }}>
+                    Notes
+                </button>
             </nav>
 
             {page === 'classes' && <Classes />}
             {page === 'eleves' && <Eleves />}
             {page === 'matieres' && <Matieres />}
+            {page === 'notes' && <Notes />}
         </div>
     );
 }
