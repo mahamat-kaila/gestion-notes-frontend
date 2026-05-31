@@ -40,7 +40,7 @@ export const updateProfesseur = (id, professeur) => api.put(`/professeurs/${id}`
 export const getAffectations = () => api.get('/affectations');
 export const createAffectation = (affectation) => api.post('/affectations', affectation);
 export const deleteAffectation = (id) => api.delete(`/affectations/${id}`);
-
+export const getAffectationsByClasse = (classeId) => api.get(`/affectations/classe/${classeId}`);
 // Classes
 export const getClasses = () => api.get('/classes');
 export const createClasse = (classe) => api.post('/classes', classe);

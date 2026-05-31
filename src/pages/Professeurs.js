@@ -154,7 +154,7 @@ function Professeurs() {
                         <td>
                             {Object.entries(
                                 affectations
-                                    .filter((a) => a.professeur.id === p.id)
+                                    .filter((a) => a.professeur && a.professeur.id === p.id)
                                     .reduce((acc, a) => {
                                         const matiere = a.matiere.nom;
                                         if (!acc[matiere]) acc[matiere] = [];
