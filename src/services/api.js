@@ -1,4 +1,5 @@
 import axios from 'axios';
+export const getRang = (eleveId, trimestre, classeId) => api.get(`/notes/rang/eleve/${eleveId}/trimestre/${trimestre}/classe/${classeId}`);
 
 const API_URL = 'http://localhost:8080/api';
 

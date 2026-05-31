@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getEleves, getMoyenne, getNotesByEleve, getAffectationsByClasse } from '../services/api';
+import { getEleves, getMoyenne, getNotesByEleve, getAffectationsByClasse, getRang } from '../services/api';
 
 function Moyenne() {
     const [eleves, setEleves] = useState([]);
     const [eleveSelectionne, setEleveSelectionne] = useState('');
     const [trimestreSelectionne, setTrimestreSelectionne] = useState('');
     const [moyenne, setMoyenne] = useState(null);
+    const [rang, setRang] = useState(null);
     const [notes, setNotes] = useState([]);
     const [affectations, setAffectations] = useState([]);
 
@@ -23,7 +24,6 @@ function Moyenne() {
         setEleveSelectionne(eleveId);
         setMoyenne(null);
         setNotes([]);
-
         if (eleveId) {
             const eleve = eleves.find((el) => el.id === parseInt(eleveId));
             if (eleve && eleve.classe) {
@@ -45,16 +45,21 @@ function Moyenne() {
             setMoyenne(moyenneResponse.data);
             const notesResponse = await getNotesByEleve(eleveSelectionne);
             setNotes(notesResponse.data.filter((n) => n.trimestre === trimestreSelectionne));
+            const eleve = eleves.find((e) => e.id === parseInt(eleveSelectionne));
+            if (eleve && eleve.classe) {
+                const rangResponse = await getRang(eleveSelectionne, trimestreSelectionne, eleve.classe.id);
+                setRang(rangResponse.data);
+            }
         } catch (error) {
             console.error('Erreur calcul moyenne', error);
         }
     };
 
-    const getMention = (moyenne) => {
-        if (moyenne >= 16) return { texte: 'Très Bien', couleur: 'green' };
-        if (moyenne >= 14) return { texte: 'Bien', couleur: 'blue' };
-        if (moyenne >= 12) return { texte: 'Assez Bien', couleur: 'orange' };
-        if (moyenne >= 10) return { texte: 'Passable', couleur: 'gray' };
+    const getMention = (moy) => {
+        if (moy >= 16) return { texte: 'Très Bien', couleur: 'green' };
+        if (moy >= 14) return { texte: 'Bien', couleur: 'blue' };
+        if (moy >= 12) return { texte: 'Assez Bien', couleur: 'orange' };
+        if (moy >= 10) return { texte: 'Passable', couleur: 'gray' };
         return { texte: 'Insuffisant', couleur: 'red' };
     };
 
@@ -102,11 +107,11 @@ function Moyenne() {
                     <p><strong>Élève :</strong> {eleveInfo.nom} {eleveInfo.prenom}</p>
                     <p><strong>Matricule :</strong> {eleveInfo.matricule}</p>
                     <p><strong>Classe :</strong> {eleveInfo.classe ? eleveInfo.classe.nom : '-'}</p>
-                    <p><strong>Âge :</strong> {eleveInfo.age} ans</p>
+                    <p><strong>Rang :</strong> {rang !== null ? `${rang}e` : '-'}</p>
 
-                    <table border="1" style={{ width: '100%', marginTop: '10px' }}>
+                    <table border="1" style={{ width: '100%', marginTop: '10px', borderCollapse: 'collapse' }}>
                         <thead>
-                        <tr>
+                        <tr style={{ background: '#f0f0f0' }}>
                             <th>Matière</th>
                             <th>Moy. Devoirs</th>
                             <th>Moy. Composition</th>
@@ -117,20 +122,52 @@ function Moyenne() {
                         </tr>
                         </thead>
                         <tbody>
-                        {affectations.map((a) => {
-                            const note = notes.find((n) => n.matiere && n.matiere.id === a.matiere.id);
+                        {['Littéraire', 'Scientifique', 'Complémentaire'].map((groupe) => {
+                            const affectationsGroupe = affectations.filter(
+                                (a) => a.matiere.groupe === groupe
+                            );
+                            if (affectationsGroupe.length === 0) return null;
+
+                            const sommeCoeffGroupe = affectationsGroupe.reduce((acc, a) => {
+                                const note = notes.find((n) => n.matiere && n.matiere.id === a.matiere.id);
+                                if (note && note.moyenneGenerale) return acc + a.matiere.coefficient;
+                                return acc;
+                            }, 0);
+
+                            const sommeMoyGroupe = affectationsGroupe.reduce((acc, a) => {
+                                const note = notes.find((n) => n.matiere && n.matiere.id === a.matiere.id);
+                                if (note && note.moyenneGenerale) return acc + note.moyenneGenerale * a.matiere.coefficient;
+                                return acc;
+                            }, 0);
+
+                            const moyenneGroupe = sommeCoeffGroupe > 0 ? (sommeMoyGroupe / sommeCoeffGroupe).toFixed(2) : '------';
+
                             return (
-                                <tr key={a.id}>
-                                    <td>{a.matiere.nom}</td>
-                                    <td>{note ? note.moyenneDevoirs : '-'}</td>
-                                    <td>{note ? (note.noteUnique !== null && note.noteUnique !== undefined ? note.noteUnique : note.composition) : '-'}</td>
-                                    <td>{note ? note.moyenneGenerale : '-'}</td>
-                                    <td>{a.matiere.coefficient}</td>
-                                    <td>{note && note.moyenneGenerale ? (note.moyenneGenerale * a.matiere.coefficient).toFixed(2) : '-'}</td>
-                                    <td style={{ color: note && note.moyenneGenerale >= 10 ? 'green' : 'red' }}>
-                                        {note ? note.appreciation : '-'}
-                                    </td>
-                                </tr>
+                                <React.Fragment key={groupe}>
+                                    {affectationsGroupe.map((a) => {
+                                        const note = notes.find((n) => n.matiere && n.matiere.id === a.matiere.id);
+                                        return (
+                                            <tr key={a.id}>
+                                                <td>{a.matiere.nom}</td>
+                                                <td>{note ? note.moyenneDevoirs : '------'}</td>
+                                                <td>{note ? (note.noteUnique != null ? note.noteUnique : note.composition) : '------'}</td>
+                                                <td>{note ? note.moyenneGenerale : '------'}</td>
+                                                <td>{a.matiere.coefficient}</td>
+                                                <td>{note && note.moyenneGenerale ? (note.moyenneGenerale * a.matiere.coefficient).toFixed(2) : '------'}</td>
+                                                <td style={{ color: note && note.moyenneGenerale >= 10 ? 'green' : 'red' }}>
+                                                    {note ? note.appreciation : '------'}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                    <tr style={{ fontWeight: 'bold', background: '#e0e0e0' }}>
+                                        <td colSpan="3">Moyenne des Matières {groupe}s</td>
+                                        <td>{moyenneGroupe}</td>
+                                        <td></td>
+                                        <td></td>
+                                        <td></td>
+                                    </tr>
+                                </React.Fragment>
                             );
                         })}
                         <tr style={{ fontWeight: 'bold', background: '#f0f0f0' }}>
@@ -145,14 +182,14 @@ function Moyenne() {
                     <p style={{ marginTop: '10px', fontSize: '18px' }}>
                         <strong>Moyenne générale : </strong>
                         <span style={{ color: getMention(moyenne).couleur, fontWeight: 'bold' }}>
-              {moyenne}/20
-            </span>
+                            {moyenne}/20
+                        </span>
                     </p>
                     <p>
                         <strong>Mention : </strong>
                         <span style={{ color: getMention(moyenne).couleur, fontWeight: 'bold' }}>
-              {getMention(moyenne).texte}
-            </span>
+                            {getMention(moyenne).texte}
+                        </span>
                     </p>
                 </div>
             )}

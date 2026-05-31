@@ -3,7 +3,7 @@ import { getMatieres, createMatiere, deleteMatiere, updateMatiere } from '../ser
 
 function Matieres() {
     const [matieres, setMatieres] = useState([]);
-    const [matiere, setMatiere] = useState({ nom: '', coefficient: '' });
+    const [matiere, setMatiere] = useState({ nom: '', coefficient: '', groupe: '' });
     const [matiereEditee, setMatiereEditee] = useState(null);
     const [erreur, setErreur] = useState('');
 
@@ -70,6 +70,12 @@ function Matieres() {
             <form onSubmit={handleSubmit}>
                 <input name="nom" placeholder="Nom de la matière" value={matiere.nom} onChange={handleChange} required /><br />
                 <input name="coefficient" type="number" step="0.5" placeholder="Coefficient" value={matiere.coefficient} onChange={handleChange} required /><br />
+                <select name="groupe" value={matiere.groupe || ''} onChange={handleChange} required>
+                    <option value="">-- Choisir un groupe --</option>
+                    <option value="Littéraire">Littéraire</option>
+                    <option value="Scientifique">Scientifique</option>
+                    <option value="Complémentaire">Complémentaire</option>
+                </select><br />
                 <button type="submit">Ajouter</button>
                 {erreur && <p style={{ color: 'red' }}>{erreur}</p>}
             </form>
@@ -80,6 +86,12 @@ function Matieres() {
                     <form onSubmit={handleEditSubmit}>
                         <input name="nom" placeholder="Nom" value={matiereEditee.nom} onChange={handleEditChange} required /><br />
                         <input name="coefficient" type="number" step="0.5" placeholder="Coefficient" value={matiereEditee.coefficient} onChange={handleEditChange} required /><br />
+                        <select name="groupe" value={matiereEditee.groupe || ''} onChange={handleEditChange} required>
+                            <option value="">-- Choisir un groupe --</option>
+                            <option value="Littéraire">Littéraire</option>
+                            <option value="Scientifique">Scientifique</option>
+                            <option value="Complémentaire">Complémentaire</option>
+                        </select><br />
                         <button type="submit">Enregistrer</button>
                         <button type="button" onClick={() => setMatiereEditee(null)} style={{ marginLeft: '10px' }}>Annuler</button>
                     </form>
@@ -92,6 +104,7 @@ function Matieres() {
                 <tr>
                     <th>Nom</th>
                     <th>Coefficient</th>
+                    <th>Groupe</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
@@ -100,6 +113,7 @@ function Matieres() {
                     <tr key={m.id}>
                         <td>{m.nom}</td>
                         <td>{m.coefficient}</td>
+                        <td>{m.groupe}</td>
                         <td>
                             <button onClick={() => handleEdit(m)}>Modifier</button>
                             <button onClick={() => supprimerMatiere(m.id)} style={{ marginLeft: '5px' }}>Supprimer</button>
