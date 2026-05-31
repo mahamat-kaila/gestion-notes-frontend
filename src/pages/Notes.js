@@ -1,33 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { getEleves, getMatieres, createNote, getNotesByEleve, deleteNote, updateNote, getAffectationsByClasse } from '../services/api';
+import { getEleves, getMatieres, createNote, getNotesByEleve, deleteNote, updateNote, getAffectationsByClasse, getClasses } from '../services/api';
 
 function Notes() {
-    const [eleves, setEleves] = useState([]);
+    const [classes, setClasses] = useState([]);
     const [matieres, setMatieres] = useState([]);
-    const [notes, setNotes] = useState([]);
-    const [matiereSelectionnee, setMatiereSelectionnee] = useState(null);
-    const [eleveSelectionne, setEleveSelectionne] = useState('');
+    const [eleves, setEleves] = useState([]);
     const [affectations, setAffectations] = useState([]);
+    const [classeSelectionnee, setClasseSelectionnee] = useState('');
     const [trimestreSelectionne, setTrimestreSelectionne] = useState('');
-    const [noteEditee, setNoteEditee] = useState(null);
-    const [note, setNote] = useState({
-        devoir1: '',
-        devoir2: '',
-        composition: '',
-        dateNote: new Date().toISOString().split('T')[0],
-        trimestre: '',
-        eleve: null,
-        matiere: null,
-    });
+    const [matiereSelectionnee, setMatiereSelectionnee] = useState(null);
+    const [notesEleves, setNotesEleves] = useState({});
+    const [message, setMessage] = useState('');
 
     useEffect(() => {
-        chargerEleves();
+        chargerClasses();
         chargerMatieres();
     }, []);
 
-    const chargerEleves = async () => {
-        const response = await getEleves();
-        setEleves(response.data);
+    const chargerClasses = async () => {
+        const response = await getClasses();
+        setClasses(response.data);
     };
 
     const chargerMatieres = async () => {
@@ -35,195 +27,198 @@ function Notes() {
         setMatieres(response.data);
     };
 
-    const chargerNotes = async (eleveId) => {
-        const response = await getNotesByEleve(eleveId);
-        setNotes(response.data);
-    };
+    const handleClasseChange = async (e) => {
+        const classeId = e.target.value;
+        setClasseSelectionnee(classeId);
+        setMatiereSelectionnee(null);
+        setEleves([]);
+        setNotesEleves({});
 
-    const handleEleveChange = async (e) => {
-        const eleveId = e.target.value;
-        setEleveSelectionne(eleveId);
-        if (eleveId) {
-            chargerNotes(eleveId);
-            const eleve = eleves.find((el) => el.id === parseInt(eleveId));
-            if (eleve && eleve.classe) {
-                const affResponse = await getAffectationsByClasse(eleve.classe.id);
-                setAffectations(affResponse.data);
-            }
+        if (classeId) {
+            const affResponse = await getAffectationsByClasse(classeId);
+            setAffectations(affResponse.data);
         }
-        setNote({ ...note, eleve: { id: eleveId } });
     };
 
-    const handleTrimestreChange = (e) => {
-        setTrimestreSelectionne(e.target.value);
-        setNote({ ...note, trimestre: e.target.value });
-    };
-
-    const handleChange = (e) => {
-        setNote({ ...note, [e.target.name]: e.target.value });
-    };
-
-    const handleMatiereChange = (e) => {
+    const handleMatiereChange = async (e) => {
         const matiereId = e.target.value;
-        const matiere = affectations.find((a) => a.matiere.id === parseInt(matiereId));
-        setMatiereSelectionnee(matiere ? matiere.matiere : null);
-        setNote({ ...note, matiere: { id: matiereId } });
-    };
+        const matiere = matieres.find((m) => m.id === parseInt(matiereId));
+        setMatiereSelectionnee(matiere);
+        setNotesEleves({});
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        await createNote(note);
-        chargerNotes(eleveSelectionne);
-        setNote({
-            ...note,
-            devoir1: '',
-            devoir2: '',
-            composition: '',
-            dateNote: new Date().toISOString().split('T')[0],
-            matiere: null,
-        });
-    };
+        if (classeSelectionnee && matiereId)  {
+            // Charger les élèves de la classe
+            const elevesResponse = await getEleves();
+            const elevesClasse = elevesResponse.data.filter(
+                (e) => e.classe && e.classe.id === parseInt(classeSelectionnee)
+            );
+            setEleves(elevesClasse);
 
-    const supprimerNote = async (id) => {
-        if (window.confirm('Voulez-vous vraiment supprimer cette note ?')) {
-            await deleteNote(id);
-            chargerNotes(eleveSelectionne);
+            // Charger les notes existantes pour chaque élève
+            const notesTemp = {};
+            for (const eleve of elevesClasse) {
+                const notesResponse = await getNotesByEleve(eleve.id);
+                const noteExistante = notesResponse.data.find(
+                    (n) => n.trimestre === trimestreSelectionne && n.matiere && n.matiere.id === parseInt(matiereId)
+                );
+                notesTemp[eleve.id] = noteExistante || {
+                    devoir1: '',
+                    devoir2: '',
+                    composition: '',
+                    noteUnique: '',
+                    eleve: { id: eleve.id },
+                    matiere: { id: parseInt(matiereId) },
+                    trimestre: trimestreSelectionne,
+                    dateNote: new Date().toISOString().split('T')[0],
+                };
+            }
+            setNotesEleves(notesTemp);
         }
     };
 
-    const handleEdit = (note) => {
-        setNoteEditee({ ...note, matiere: note.matiere, eleve: note.eleve });
+    const handleNoteChange = (eleveId, champ, valeur) => {
+        setNotesEleves((prev) => ({
+            ...prev,
+            [eleveId]: { ...prev[eleveId], [champ]: valeur },
+        }));
     };
 
-    const handleEditChange = (e) => {
-        setNoteEditee({ ...noteEditee, [e.target.name]: e.target.value });
-    };
-
-    const handleEditMatiereChange = (e) => {
-        setNoteEditee({ ...noteEditee, matiere: { id: e.target.value } });
-    };
-
-    const handleEditSubmit = async (e) => {
-        e.preventDefault();
+    const handleSaveAll = async () => {
         try {
-            await updateNote(noteEditee.id, noteEditee);
-            setNoteEditee(null);
-            chargerNotes(eleveSelectionne);
+            for (const eleveId of Object.keys(notesEleves)) {
+                const note = notesEleves[eleveId];
+                if (note.id) {
+                    await updateNote(note.id, note);
+                } else {
+                    await createNote(note);
+                }
+            }
+            setMessage('✅ Notes enregistrées avec succès !');
+            setTimeout(() => setMessage(''), 3000);
         } catch (error) {
-            console.error('Erreur modification note', error);
+            setMessage('❌ Erreur lors de l\'enregistrement !');
         }
     };
+
+    const isConduite = matiereSelectionnee && matiereSelectionnee.nom === 'Conduite';
 
     return (
         <div>
-            <h2>Gestion des Notes</h2>
+            <h2>Saisie des Notes</h2>
 
-            <h3>Étape 1 — Choisir l'élève et le trimestre</h3>
-            <select onChange={handleEleveChange} value={eleveSelectionne}>
-                <option value="">-- Choisir un élève --</option>
-                {eleves.map((e) => (
-                    <option key={e.id} value={e.id}>
-                        {e.nom} {e.prenom} - {e.classe ? e.classe.nom : '-'}
-                    </option>
-                ))}
-            </select>
-            <br /><br />
-            <select onChange={handleTrimestreChange} value={trimestreSelectionne}>
-                <option value="">-- Choisir un trimestre --</option>
-                <option value="TRIMESTRE_1">Trimestre 1</option>
-                <option value="TRIMESTRE_2">Trimestre 2</option>
-                <option value="TRIMESTRE_3">Trimestre 3</option>
-            </select>
+            {/* Étape 1 */}
+            <div style={{ marginBottom: '15px' }}>
+                <label><strong>Trimestre : </strong></label>
+                <select onChange={(e) => { setTrimestreSelectionne(e.target.value); setEleves([]); setNotesEleves({}); }} value={trimestreSelectionne}>
+                    <option value="">-- Choisir un trimestre --</option>
+                    <option value="TRIMESTRE_1">Trimestre 1</option>
+                    <option value="TRIMESTRE_2">Trimestre 2</option>
+                    <option value="TRIMESTRE_3">Trimestre 3</option>
+                </select>
+            </div>
 
-            {eleveSelectionne && trimestreSelectionne && (
-                <>
-                    <h3>Étape 2 — Ajouter une note</h3>
-                    <form onSubmit={handleSubmit}>
-                        <select name="matiere" onChange={handleMatiereChange} required>
-                            <option value="">-- Choisir une matière --</option>
-                            {affectations
-                                .filter((a) => !notes
-                                    .filter((n) => n.trimestre === trimestreSelectionne)
-                                    .some((n) => n.matiere && n.matiere.id === a.matiere.id)
-                                )
-                                .map((a) => (
-                                    <option key={a.matiere.id} value={a.matiere.id}>
-                                        {a.matiere.nom} (coeff {a.matiere.coefficient})
-                                    </option>
-                                ))
-                            }
-                        </select><br />
+            {/* Étape 2 */}
+            {trimestreSelectionne && (
+                <div style={{ marginBottom: '15px' }}>
+                    <label><strong>Classe : </strong></label>
+                    <select onChange={handleClasseChange} value={classeSelectionnee}>
+                        <option value="">-- Choisir une classe --</option>
+                        {classes.map((c) => (
+                            <option key={c.id} value={c.id}>{c.nom}</option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
-                        {matiereSelectionnee && matiereSelectionnee.nom === 'Conduite' ? (
-                            <>
-                                <input name="noteUnique" type="number" step="0.25" min="0" max="20" placeholder="Note de conduite /20" value={note.noteUnique || ''} onChange={handleChange} required /><br />
-                            </>
-                        ) : (
-                            <>
-                                <input name="devoir1" type="number" step="0.25" min="0" max="20" placeholder="Devoir 1 /20" value={note.devoir1 || ''} onChange={handleChange} required /><br />
-                                <input name="devoir2" type="number" step="0.25" min="0" max="20" placeholder="Devoir 2 /20" value={note.devoir2 || ''} onChange={handleChange} required /><br />
-                                <input name="composition" type="number" step="0.25" min="0" max="20" placeholder="Composition /20" value={note.composition || ''} onChange={handleChange} required /><br />
-                            </>
-                        )}
-                        <input name="dateNote" type="date" value={note.dateNote} onChange={handleChange} required /><br />
-                        <button type="submit">Ajouter la note</button>
-                    </form>
+            {/* Étape 3 */}
+            {trimestreSelectionne && classeSelectionnee && (
+                <div style={{ marginBottom: '15px' }}>
+                    <label><strong>Matière : </strong></label>
+                    <select onChange={handleMatiereChange} value={matiereSelectionnee ? matiereSelectionnee.id : ''}>
+                        <option value="">-- Choisir une matière --</option>
+                        {affectations.map((a) => (
+                            <option key={a.matiere.id} value={a.matiere.id}>
+                                {a.matiere.nom} (coeff {a.matiere.coefficient})
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
 
-                    {noteEditee && (
-                        <div style={{ border: '1px solid orange', padding: '10px', marginBottom: '10px' }}>
-                            <h3>Modifier la note</h3>
-                            <form onSubmit={handleEditSubmit}>
-                                <select onChange={handleEditMatiereChange} defaultValue={noteEditee.matiere ? noteEditee.matiere.id : ''} required>
-                                    <option value="">-- Choisir une matière --</option>
-                                    {matieres.map((m) => (
-                                        <option key={m.id} value={m.id}>{m.nom}</option>
-                                    ))}
-                                </select><br />
-                                <input name="devoir1" type="number" step="0.25" min="0" max="20" placeholder="Devoir 1 /20" value={noteEditee.devoir1 || ''} onChange={handleEditChange} required /><br />
-                                <input name="devoir2" type="number" step="0.25" min="0" max="20" placeholder="Devoir 2 /20" value={noteEditee.devoir2 || ''} onChange={handleEditChange} required /><br />
-                                <input name="composition" type="number" step="0.25" min="0" max="20" placeholder="Composition /20" value={noteEditee.composition || ''} onChange={handleEditChange} required /><br />
-                                <input name="dateNote" type="date" value={noteEditee.dateNote} onChange={handleEditChange} required /><br />
-                                <button type="submit">Enregistrer</button>
-                                <button type="button" onClick={() => setNoteEditee(null)} style={{ marginLeft: '10px' }}>Annuler</button>
-                            </form>
-                        </div>
-                    )}
-
-                    <h3>Notes du trimestre</h3>
-                    <table border="1">
+            {/* Liste des élèves */}
+            {eleves.length > 0 && matiereSelectionnee && (
+                <div>
+                    <h3>Notes — {matiereSelectionnee.nom} — {trimestreSelectionne.replace('_', ' ')}</h3>
+                    {message && <p style={{ color: message.includes('✅') ? 'green' : 'red' }}>{message}</p>}
+                    <table border="1" style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                        <tr>
-                            <th>Matière</th>
-                            <th>Devoir 1</th>
-                            <th>Devoir 2</th>
-                            <th>Moy. Devoirs</th>
-                            <th>Composition</th>
-                            <th>Moy. Générale</th>
-                            <th>Appréciation</th>
-                            <th>Actions</th>
+                        <tr style={{ background: '#f0f0f0' }}>
+                            <th>Matricule</th>
+                            <th>Nom</th>
+                            <th>Prénom</th>
+                            {isConduite ? (
+                                <th>Note Conduite /20</th>
+                            ) : (
+                                <>
+                                    <th>Devoir 1 /20</th>
+                                    <th>Devoir 2 /20</th>
+                                    <th>Composition /20</th>
+                                </>
+                            )}
                         </tr>
                         </thead>
                         <tbody>
-                        {notes
-                            .filter((n) => n.trimestre === trimestreSelectionne)
-                            .map((n) => (
-                                <tr key={n.id}>
-                                    <td>{n.matiere ? n.matiere.nom : '-'}</td>
-                                    <td>{n.devoir1}</td>
-                                    <td>{n.devoir2}</td>
-                                    <td>{n.moyenneDevoirs}</td>
-                                    <td>{n.composition}</td>
-                                    <td>{n.moyenneGenerale}</td>
-                                    <td>{n.appreciation}</td>
+                        {eleves.map((eleve) => (
+                            <tr key={eleve.id}>
+                                <td>{eleve.matricule}</td>
+                                <td>{eleve.nom}</td>
+                                <td>{eleve.prenom}</td>
+                                {isConduite ? (
                                     <td>
-                                        <button onClick={() => handleEdit(n)}>Modifier</button>
-                                        <button onClick={() => supprimerNote(n.id)} style={{ marginLeft: '5px' }}>Supprimer</button>
+                                        <input
+                                            type="number" step="0.25" min="0" max="20"
+                                            value={notesEleves[eleve.id]?.noteUnique || ''}
+                                            onChange={(e) => handleNoteChange(eleve.id, 'noteUnique', e.target.value)}
+                                            style={{ width: '60px' }}
+                                        />
                                     </td>
-                                </tr>
-                            ))}
+                                ) : (
+                                    <>
+                                        <td>
+                                            <input
+                                                type="number" step="0.25" min="0" max="20"
+                                                value={notesEleves[eleve.id]?.devoir1 || ''}
+                                                onChange={(e) => handleNoteChange(eleve.id, 'devoir1', e.target.value)}
+                                                style={{ width: '60px' }}
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="number" step="0.25" min="0" max="20"
+                                                value={notesEleves[eleve.id]?.devoir2 || ''}
+                                                onChange={(e) => handleNoteChange(eleve.id, 'devoir2', e.target.value)}
+                                                style={{ width: '60px' }}
+                                            />
+                                        </td>
+                                        <td>
+                                            <input
+                                                type="number" step="0.25" min="0" max="20"
+                                                value={notesEleves[eleve.id]?.composition || ''}
+                                                onChange={(e) => handleNoteChange(eleve.id, 'composition', e.target.value)}
+                                                style={{ width: '60px' }}
+                                            />
+                                        </td>
+                                    </>
+                                )}
+                            </tr>
+                        ))}
                         </tbody>
                     </table>
-                </>
+                    <br />
+                    <button onClick={handleSaveAll} style={{ background: 'green', color: 'white', padding: '10px 20px' }}>
+                        Enregistrer toutes les notes
+                    </button>
+                </div>
             )}
         </div>
     );

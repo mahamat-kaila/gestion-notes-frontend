@@ -186,9 +186,14 @@ function Professeurs() {
                 </select><br />
                 <select name="matiere" onChange={handleAffectationChange} required>
                     <option value="">-- Choisir une matière --</option>
-                    {matieres.map((m) => (
-                        <option key={m.id} value={m.id}>{m.nom}</option>
-                    ))}
+                    {matieres
+                        .filter((m) => !affectations.some(
+                            (a) => a.matiere.id === m.id && a.classe && a.classe.id === parseInt(affectation.classe?.id)
+                        ))
+                        .map((m) => (
+                            <option key={m.id} value={m.id}>{m.nom}</option>
+                        ))
+                    }
                 </select><br />
                 <select name="classe" onChange={handleAffectationChange} required>
                     <option value="">-- Choisir une classe --</option>

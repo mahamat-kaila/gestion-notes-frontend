@@ -47,4 +47,11 @@ export const getClasses = () => api.get('/classes');
 export const createClasse = (classe) => api.post('/classes', classe);
 export const deleteClasse = (id) => api.delete(`/classes/${id}`);
 export const updateClasse = (id, classe) => api.put(`/classes/${id}`, classe);
+
+// Annee Scolaire
+export const getAnnees = () => api.get('/annees');
+export const getAnneeActive = () => api.get('/annees/active');
+export const createAnnee = (annee) => api.post('/annees', annee);
+export const activerAnnee = (id) => api.put(`/annees/${id}/activer`);
+export const deleteAnnee = (id) => api.delete(`/annees/${id}`);
 export default api;
