@@ -410,14 +410,14 @@ function Moyenne() {
                     {/* Tableau */}
                     <table border="1" style={{ width: '100%', marginTop: '10px', borderCollapse: 'collapse' }}>
                         <thead>
-                        <tr style={{ background: '#f0f0f0' }}>
-                            <th>Matière</th>
-                            <th>Moy. Dev.</th>
-                            <th>Moy. Comp.</th>
-                            <th>Moy. Gén.</th>
-                            <th>Coeff</th>
-                            <th>Coeff × Moy</th>
-                            <th>Appréciations</th>
+                        <tr style={{ background: '#455a64', color: 'white' }}>
+                            <th style={{ color: 'white', padding: '8px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>Matière</th>
+                            <th style={{ color: 'white', padding: '8px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>Moy. Dev.</th>
+                            <th style={{ color: 'white', padding: '8px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>Moy. Comp.</th>
+                            <th style={{ color: 'white', padding: '8px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>Moy. Gén.</th>
+                            <th style={{ color: 'white', padding: '8px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>Coeff</th>
+                            <th style={{ color: 'white', padding: '8px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>Coeff × Moy</th>
+                            <th style={{ color: 'white', padding: '8px 10px', whiteSpace: 'nowrap', textAlign: 'center' }}>Appréciations</th>
                         </tr>
                         </thead>
                         <tbody>

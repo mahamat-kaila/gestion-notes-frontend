@@ -100,8 +100,8 @@ function Classes({ onClassesChange }) {
                         <td>{c.nom}</td>
                         <td>{c.effectif}</td>
                         <td>
-                            <button onClick={() => handleEdit(c)}>Modifier</button>
-                            <button onClick={() => supprimerClasse(c.id)} style={{ marginLeft: '5px' }}>Supprimer</button>
+                            <button className="btn-modifier" onClick={() => handleEdit(c)}>✏️ Modifier</button>
+                            <button className="btn-supprimer" onClick={() => supprimerClasse(c.id)}>🗑️ Supprimer</button>
                         </td>
                     </tr>
                 ))}

@@ -6,8 +6,8 @@ import Notes from './pages/Notes';
 import Professeurs from './pages/Professeurs';
 import Moyenne from './pages/Moyenne';
 import AnneeScolaire from './pages/AnneeScolaire';
-import { getAnnees, activerAnnee } from './services/api';
 import Accueil from './pages/Accueil';
+import { getAnnees, activerAnnee } from './services/api';
 
 function App() {
     const [page, setPage] = useState('accueil');
@@ -16,6 +16,11 @@ function App() {
 
     useEffect(() => {
         chargerAnnees();
+    }, []);
+    useEffect(() => {
+        document.querySelectorAll('input').forEach(input => {
+            input.setAttribute('autocomplete', 'off');
+        });
     }, []);
 
     const chargerAnnees = async () => {
@@ -32,13 +37,33 @@ function App() {
         chargerAnnees();
     };
 
+    const navItems = [
+        { key: 'accueil', label: '🏠 Accueil' },
+        { key: 'annee', label: '📅 Année Scolaire' },
+        { key: 'classes', label: '🏫 Classes' },
+        { key: 'eleves', label: '🎓 Élèves' },
+        { key: 'matieres', label: '📚 Matières' },
+        { key: 'notes', label: '📝 Notes' },
+        { key: 'professeurs', label: '👨‍🏫 Professeurs' },
+        { key: 'moyenne', label: '📊 Bulletin' },
+    ];
+
     return (
-        <div style={{ padding: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h1>Gestion des Notes</h1>
-                <div>
-                    <label><strong>Année Scolaire : </strong></label>
-                    <select value={anneeSelectionnee || ''} onChange={handleAnneeChange} style={{ padding: '5px', fontSize: '14px', fontWeight: 'bold' }}>
+        <div style={{ fontFamily: 'Arial, sans-serif', minHeight: '100vh', background: '#f5f5f5' }}>
+
+            {/* Header */}
+            <div style={{ background: '#1a237e', color: 'white', padding: '10px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '24px' }}>☀️</span>
+                    <div>
+                        <div style={{ fontWeight: 'bold', fontSize: '16px' }}>Complexe Scolaire Soleil Brillant</div>
+                        <div style={{ fontSize: '12px', opacity: 0.8 }}>Système de Gestion des Notes</div>
+                    </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <label style={{ fontSize: '13px' }}>Année Scolaire :</label>
+                    <select value={anneeSelectionnee || ''} onChange={handleAnneeChange}
+                            style={{ padding: '5px 10px', borderRadius: '5px', border: 'none', fontWeight: 'bold' }}>
                         <option value="">-- Choisir --</option>
                         {annees.map((a) => (
                             <option key={a.id} value={a.id}>
@@ -49,41 +74,36 @@ function App() {
                 </div>
             </div>
 
-            <nav style={{ marginBottom: '20px' }}>
-                <button onClick={() => setPage('accueil')} style={{ marginRight: '10px' }}>
-                    🏠 Accueil
-                </button>
-                <button onClick={() => setPage('annee')} style={{ marginRight: '10px' }}>
-                    Année Scolaire
-                </button>
-                <button onClick={() => setPage('classes')} style={{ marginRight: '10px' }}>
-                    Classes
-                </button>
-                <button onClick={() => setPage('eleves')} style={{ marginRight: '10px' }}>
-                    Élèves
-                </button>
-                <button onClick={() => setPage('matieres')} style={{ marginRight: '10px' }}>
-                    Matières
-                </button>
-                <button onClick={() => setPage('notes')} style={{ marginRight: '10px' }}>
-                    Notes
-                </button>
-                <button onClick={() => setPage('professeurs')} style={{ marginRight: '10px' }}>
-                    Professeurs
-                </button>
-                <button onClick={() => setPage('moyenne')} style={{ marginRight: '10px' }}>
-                    Bulletin
-                </button>
-            </nav>
+            {/* Navigation */}
+            <div style={{ background: '#283593', display: 'flex', flexWrap: 'wrap', padding: '0 10px' }}>
+                {navItems.map((item) => (
+                    <button key={item.key} onClick={() => setPage(item.key)}
+                            style={{
+                                background: page === item.key ? '#ff6f00' : 'transparent',
+                                color: 'white',
+                                border: 'none',
+                                padding: '12px 16px',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                fontWeight: page === item.key ? 'bold' : 'normal',
+                                borderBottom: page === item.key ? '3px solid #ffcc02' : '3px solid transparent',
+                            }}>
+                        {item.label}
+                    </button>
+                ))}
+            </div>
 
-            {page === 'annee' && <AnneeScolaire onAnneeChange={chargerAnnees} />}
-            {page === 'classes' && <Classes />}
-            {page === 'eleves' && <Eleves />}
-            {page === 'matieres' && <Matieres />}
-            {page === 'notes' && <Notes />}
-            {page === 'professeurs' && <Professeurs />}
-            {page === 'moyenne' && <Moyenne />}
-            {page === 'accueil' && <Accueil />}
+            {/* Contenu */}
+            <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
+                {page === 'accueil' && <Accueil />}
+                {page === 'annee' && <AnneeScolaire onAnneeChange={chargerAnnees} />}
+                {page === 'classes' && <Classes />}
+                {page === 'eleves' && <Eleves />}
+                {page === 'matieres' && <Matieres />}
+                {page === 'notes' && <Notes />}
+                {page === 'professeurs' && <Professeurs />}
+                {page === 'moyenne' && <Moyenne />}
+            </div>
         </div>
     );
 }
