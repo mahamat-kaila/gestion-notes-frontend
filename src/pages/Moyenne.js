@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getEleves, getMoyenne, getNotesByEleve, getAffectationsByClasse, getRang } from '../services/api';
+import { getEleves, getMoyenne, getNotesByEleve, getAffectationsByClasse, getRang, getClasses } from '../services/api';
 import logo from '../assets/logo.jpg';
 
 function Moyenne() {
@@ -7,6 +7,7 @@ function Moyenne() {
     const [moyenneTrim2, setMoyenneTrim2] = useState(null);
     const [moyenneTrim3, setMoyenneTrim3] = useState(null);
     const [eleves, setEleves] = useState([]);
+    const [tousLesEleves, setTousLesEleves] = useState([]);
     const [eleveSelectionne, setEleveSelectionne] = useState('');
     const [trimestreSelectionne, setTrimestreSelectionne] = useState('');
     const [moyenne, setMoyenne] = useState(null);
@@ -16,24 +17,87 @@ function Moyenne() {
     const [absences, setAbsences] = useState(0);
     const [retards, setRetards] = useState(0);
     const [decision, setDecision] = useState('');
+    const [mode, setMode] = useState('classe');
+    const [classes, setClasses] = useState([]);
+    const [classeSelectionnee, setClasseSelectionnee] = useState('');
+    const [elevesClasse, setElevesClasse] = useState([]);
+    const [recherche, setRecherche] = useState('');
+    const [resultatsRecherche, setResultatsRecherche] = useState([]);
 
-    useEffect(() => { chargerEleves(); }, []);
+    useEffect(() => {
+        chargerEleves();
+        chargerClasses();
+    }, []);
+
+    useEffect(() => {
+        if (recherche.length >= 2) {
+            const resultats = tousLesEleves.filter((e) =>
+                e.nom.toLowerCase().includes(recherche.toLowerCase()) ||
+                e.prenom.toLowerCase().includes(recherche.toLowerCase()) ||
+                e.matricule.toLowerCase().includes(recherche.toLowerCase())
+            );
+            setResultatsRecherche(resultats);
+        } else {
+            setResultatsRecherche([]);
+        }
+    }, [recherche, tousLesEleves]);
 
     const chargerEleves = async () => {
         const response = await getEleves();
         setEleves(response.data);
+        setTousLesEleves(response.data);
     };
 
-    const handleEleveChange = async (e) => {
-        const eleveId = e.target.value;
+    const chargerClasses = async () => {
+        const response = await getClasses();
+        setClasses(response.data);
+    };
+
+    const handleClasseChange = async (e) => {
+        const classeId = e.target.value;
+        setClasseSelectionnee(classeId);
+        setEleveSelectionne('');
+        setMoyenne(null);
+        if (classeId) {
+            const elevesFiltre = tousLesEleves.filter(
+                (el) => el.classe && el.classe.id === parseInt(classeId)
+            );
+            setElevesClasse(elevesFiltre);
+        }
+    };
+
+    const handleEleveChange = async (eleveId) => {
         setEleveSelectionne(eleveId);
         setMoyenne(null);
         setNotes([]);
         if (eleveId) {
-            const eleve = eleves.find((el) => el.id === parseInt(eleveId));
+            const eleve = tousLesEleves.find((el) => el.id === parseInt(eleveId));
             if (eleve && eleve.classe) {
                 const affResponse = await getAffectationsByClasse(eleve.classe.id);
                 setAffectations(affResponse.data);
+            }
+            if (trimestreSelectionne) {
+                try {
+                    const moyenneResponse = await getMoyenne(eleveId, trimestreSelectionne);
+                    setMoyenne(moyenneResponse.data);
+                    const notesResponse = await getNotesByEleve(eleveId);
+                    setNotes(notesResponse.data.filter((n) => n.trimestre === trimestreSelectionne));
+                    // Calculer le rang
+                    const eleve = tousLesEleves.find((e) => e.id === parseInt(eleveId));
+                    if (eleve && eleve.classe) {
+                        const rangResponse = await getRang(eleveId, trimestreSelectionne, eleve.classe.id);
+                        setRang(rangResponse.data);
+                    }
+                    // Calculer les moyennes des autres trimestres
+                    const moy1Response = await getMoyenne(eleveId, 'TRIMESTRE_1');
+                    setMoyenneTrim1(moy1Response.data);
+                    const moy2Response = await getMoyenne(eleveId, 'TRIMESTRE_2');
+                    setMoyenneTrim2(moy2Response.data);
+                    const moy3Response = await getMoyenne(eleveId, 'TRIMESTRE_3');
+                    setMoyenneTrim3(moy3Response.data);
+                } catch (error) {
+                    console.error('Erreur calcul moyenne', error);
+                }
             }
         }
     };
@@ -50,7 +114,7 @@ function Moyenne() {
             setMoyenne(moyenneResponse.data);
             const notesResponse = await getNotesByEleve(eleveSelectionne);
             setNotes(notesResponse.data.filter((n) => n.trimestre === trimestreSelectionne));
-            const eleve = eleves.find((e) => e.id === parseInt(eleveSelectionne));
+            const eleve = tousLesEleves.find((e) => e.id === parseInt(eleveSelectionne));
             if (eleve && eleve.classe) {
                 const rangResponse = await getRang(eleveSelectionne, trimestreSelectionne, eleve.classe.id);
                 setRang(rangResponse.data);
@@ -74,7 +138,7 @@ function Moyenne() {
         return { texte: 'Insuffisant', couleur: 'red' };
     };
 
-    const eleveInfo = eleves.find((e) => e.id === parseInt(eleveSelectionne));
+    const eleveInfo = tousLesEleves.find((e) => e.id === parseInt(eleveSelectionne));
 
     const sommeCoeffMoyenne = notes.reduce((acc, n) => {
         if (n.moyenneGenerale && n.matiere) return acc + n.moyenneGenerale * n.matiere.coefficient;
@@ -91,66 +155,147 @@ function Moyenne() {
     return (
         <div>
             <style>{`
-    @media print {
-        body * { visibility: hidden; }
-        .bulletin, .bulletin * { visibility: visible; }
-        .bulletin {
-            position: absolute;
-            left: 50%;
-            top: 0;
-            transform: translateX(-50%);
-            width: 200mm;
-            min-height: 287mm;
-            padding: 8mm;
-            font-size: 12px;
-            box-sizing: border-box;
-        }
-        .bulletin table {
-            font-size: 11px;
-            width: 100%;
-        }
-        .bulletin td, .bulletin th {
-            padding: 6px 5px;
-        }
-        .bulletin img {
-            width: 90px !important;
-            height: 90px !important;
-        }
-        .bulletin h3 {
-            font-size: 15px;
-        }
-        .bulletin p {
-            font-size: 12px;
-            margin: 3px 0 !important;
-        }
-        @page {
-            size: A4 portrait;
-            margin: 5mm;
-        }
-    }
-`}</style>
+                @media print {
+                    body * { visibility: hidden; }
+                    .bulletin, .bulletin * { visibility: visible; }
+                    .bulletin {
+                        position: absolute;
+                        left: 50%;
+                        top: 0;
+                        transform: translateX(-50%);
+                        width: 200mm;
+                        min-height: 287mm;
+                        padding: 8mm;
+                        font-size: 12px;
+                        box-sizing: border-box;
+                    }
+                    .bulletin table { font-size: 11px; width: 100%; }
+                    .bulletin td, .bulletin th { padding: 6px 5px; }
+                    .bulletin img { width: 90px !important; height: 90px !important; }
+                    .bulletin h3 { font-size: 15px; }
+                    .bulletin p { font-size: 12px; margin: 3px 0 !important; }
+                    @page { size: A4 portrait; margin: 5mm; }
+                }
+            `}</style>
 
             <div className="no-print">
                 <h2>Bulletin de Notes</h2>
 
-                <select onChange={handleEleveChange} value={eleveSelectionne}>
-                    <option value="">-- Choisir un élève --</option>
-                    {eleves.map((e) => (
-                        <option key={e.id} value={e.id}>
-                            {e.nom} {e.prenom} - {e.classe ? e.classe.nom : '-'}
-                        </option>
-                    ))}
-                </select>
-                <br /><br />
+                {/* Mode */}
+                <div style={{ marginBottom: '15px' }}>
+                    <label><strong>Mode : </strong></label>
+                    <button onClick={() => { setMode('classe'); setMoyenne(null); setEleveSelectionne(''); }}
+                            style={{ marginRight: '10px', background: mode === 'classe' ? 'blue' : 'gray', color: 'white', padding: '5px 15px' }}>
+                        Par Classe
+                    </button>
+                    <button onClick={() => { setMode('recherche'); setMoyenne(null); setEleveSelectionne(''); }}
+                            style={{ background: mode === 'recherche' ? 'blue' : 'gray', color: 'white', padding: '5px 15px' }}>
+                        Par Recherche
+                    </button>
+                </div>
 
-                <select onChange={handleTrimestreChange} value={trimestreSelectionne}>
-                    <option value="">-- Choisir un trimestre --</option>
-                    <option value="TRIMESTRE_1">Trimestre 1</option>
-                    <option value="TRIMESTRE_2">Trimestre 2</option>
-                    <option value="TRIMESTRE_3">Trimestre 3</option>
-                </select>
-                <br /><br />
+                {/* Trimestre */}
+                <div style={{ marginBottom: '15px' }}>
+                    <label><strong>Trimestre : </strong></label>
+                    <select onChange={handleTrimestreChange} value={trimestreSelectionne}>
+                        <option value="">-- Choisir un trimestre --</option>
+                        <option value="TRIMESTRE_1">Trimestre 1</option>
+                        <option value="TRIMESTRE_2">Trimestre 2</option>
+                        <option value="TRIMESTRE_3">Trimestre 3</option>
+                    </select>
+                </div>
 
+                {/* Mode Par Classe */}
+                {mode === 'classe' && trimestreSelectionne && (
+                    <div style={{ marginBottom: '15px' }}>
+                        <label><strong>Classe : </strong></label>
+                        <select onChange={handleClasseChange} value={classeSelectionnee}>
+                            <option value="">-- Choisir une classe --</option>
+                            {classes.map((c) => (
+                                <option key={c.id} value={c.id}>{c.nom}</option>
+                            ))}
+                        </select>
+                        {elevesClasse.length > 0 && (
+                            <div style={{ marginTop: '10px' }}>
+                                <strong>Liste des élèves :</strong>
+                                <div style={{ marginTop: '5px', border: '1px solid #ccc', borderRadius: '4px', maxHeight: '200px', overflowY: 'auto' }}>
+                                    {elevesClasse.map((e) => (
+                                        <div
+                                            key={e.id}
+                                            onClick={() => handleEleveChange(String(e.id))}
+                                            style={{
+                                                padding: '8px 12px',
+                                                cursor: 'pointer',
+                                                background: eleveSelectionne === String(e.id) ? '#d0e8ff' : 'white',
+                                                borderBottom: '1px solid #eee'
+                                            }}
+                                            onMouseOver={(ev) => ev.currentTarget.style.background = '#f0f0f0'}
+                                            onMouseOut={(ev) => ev.currentTarget.style.background = eleveSelectionne === String(e.id) ? '#d0e8ff' : 'white'}
+                                        >
+                                            <strong>{e.nom} {e.prenom}</strong> — {e.matricule} — {e.classe ? e.classe.nom : '-'}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Mode Par Recherche */}
+                {mode === 'recherche' && trimestreSelectionne && (
+                    <div style={{ marginBottom: '15px' }}>
+                        <label><strong>Rechercher : </strong></label>
+                        <input
+                            type="text"
+                            placeholder="Nom, Prénom ou Matricule..."
+                            value={recherche}
+                            onChange={(e) => setRecherche(e.target.value)}
+                            style={{ padding: '5px', width: '250px' }}
+                        />
+                        {resultatsRecherche.length > 0 && (
+                            <div style={{ marginTop: '10px', border: '1px solid #ccc', borderRadius: '4px', maxHeight: '200px', overflowY: 'auto' }}>
+                                {resultatsRecherche.map((e) => (
+                                    <div
+                                        key={e.id}
+                                        onClick={() => { handleEleveChange(String(e.id)); setRecherche(e.nom + ' ' + e.prenom); setResultatsRecherche([]); }}
+                                        style={{
+                                            padding: '8px 12px',
+                                            cursor: 'pointer',
+                                            background: eleveSelectionne === String(e.id) ? '#d0e8ff' : 'white',
+                                            borderBottom: '1px solid #eee'
+                                        }}
+                                        onMouseOver={(ev) => ev.currentTarget.style.background = '#f0f0f0'}
+                                        onMouseOut={(ev) => ev.currentTarget.style.background = eleveSelectionne === String(e.id) ? '#d0e8ff' : 'white'}
+                                    >
+                                        <strong>{e.nom} {e.prenom}</strong> — {e.matricule} — {e.classe ? e.classe.nom : '-'}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* Aperçu élève sélectionné */}
+                {eleveSelectionne && eleveInfo && (
+                    <div style={{ marginTop: '15px', padding: '10px', background: '#f9f9f9', border: '1px solid #ddd', borderRadius: '5px' }}>
+                        <h3 style={{ margin: '0 0 10px 0' }}>Aperçu : {eleveInfo.nom} {eleveInfo.prenom}</h3>
+                        <p><strong>Classe :</strong> {eleveInfo.classe ? eleveInfo.classe.nom : '-'}</p>
+                        <p><strong>Matricule :</strong> {eleveInfo.matricule}</p>
+                        {trimestreSelectionne && moyenne !== null && (
+                            <>
+                                <p><strong>Moyenne générale :</strong> <span style={{ color: moyenne >= 10 ? 'green' : 'red', fontWeight: 'bold' }}>{moyenne}/20</span></p>
+                                <p><strong>Mention :</strong> <span style={{ color: getMention(moyenne).couleur, fontWeight: 'bold' }}>{getMention(moyenne).texte}</span></p>
+                                {notes.find((n) => n.matiere && n.matiere.nom === 'Conduite') && (
+                                    <p><strong>Conduite :</strong> <span style={{ fontWeight: 'bold' }}>
+                        {notes.find((n) => n.matiere && n.matiere.nom === 'Conduite').noteUnique}/20
+                    </span></p>
+                                )}
+                            </>
+                        )}
+                    </div>
+                )}
+
+                {/* Absences et Retards */}
                 <div style={{ marginTop: '10px' }}>
                     <label><strong>Absences :</strong></label>
                     <input type="number" min="0" value={absences} onChange={(e) => setAbsences(e.target.value)} style={{ width: '60px', marginLeft: '10px', marginRight: '20px' }} />
@@ -158,6 +303,7 @@ function Moyenne() {
                     <input type="number" min="0" value={retards} onChange={(e) => setRetards(e.target.value)} style={{ width: '60px', marginLeft: '10px' }} />
                 </div>
 
+                {/* Décision */}
                 <div style={{ marginTop: '10px' }}>
                     <label><strong>Décision du conseil :</strong></label><br />
                     <select value={decision} onChange={(e) => setDecision(e.target.value)} style={{ marginTop: '5px', width: '300px' }}>
@@ -209,6 +355,7 @@ function Moyenne() {
 
             {moyenne !== null && eleveInfo && (
                 <div className="bulletin" style={{ marginTop: '20px', border: '1px solid black', padding: '15px' }}>
+
                     {/* En-tête */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
                         <div style={{ fontSize: '12px', width: '30%' }}>

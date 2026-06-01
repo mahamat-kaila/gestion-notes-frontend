@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getProfesseurs, createProfesseur, deleteProfesseur, getMatieres, getClasses, createAffectation, getAffectations, updateProfesseur } from '../services/api';
+import { getProfesseurs, createProfesseur, deleteProfesseur, getMatieres, getClasses, createAffectation, getAffectations, updateProfesseur, deleteAffectation } from '../services/api';
 function Professeurs() {
     const [professeurs, setProfesseurs] = useState([]);
     const [matieres, setMatieres] = useState([]);
@@ -96,6 +96,13 @@ function Professeurs() {
         }
     };
 
+    const handleDesaffecter = async (id) => {
+        if (window.confirm('Voulez-vous vraiment désaffecter ce professeur ?')) {
+            await deleteAffectation(id);
+            chargerAffectations();
+        }
+    };
+
     const chargerAffectations = async () => {
         const response = await getAffectations();
         setAffectations(response.data);
@@ -152,20 +159,19 @@ function Professeurs() {
                         <td>{p.email}</td>
                         <td>{p.adresse}</td>
                         <td>
-                            {Object.entries(
-                                affectations
-                                    .filter((a) => a.professeur && a.professeur.id === p.id)
-                                    .reduce((acc, a) => {
-                                        const matiere = a.matiere.nom;
-                                        if (!acc[matiere]) acc[matiere] = [];
-                                        acc[matiere].push(a.classe.nom);
-                                        return acc;
-                                    }, {})
-                            ).map(([matiere, classes]) => (
-                                <span key={matiere} style={{ display: 'block' }}>
-      {matiere} → {classes.join(', ')}
-    </span>
-                            ))}
+                            {affectations
+                                .filter((a) => a.professeur && a.professeur.id === p.id)
+                                .map((a) => (
+                                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                        <span>{a.matiere.nom} → {a.classe.nom}</span>
+                                        <button
+                                            onClick={() => handleDesaffecter(a.id)}
+                                            style={{ background: 'red', color: 'white', padding: '2px 8px', fontSize: '11px' }}>
+                                            Désaffecter
+                                        </button>
+                                    </div>
+                                ))
+                            }
                         </td>
                         <td>
                             <button onClick={() => handleEdit(p)}>Modifier</button>

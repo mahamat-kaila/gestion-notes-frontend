@@ -7,9 +7,10 @@ import Professeurs from './pages/Professeurs';
 import Moyenne from './pages/Moyenne';
 import AnneeScolaire from './pages/AnneeScolaire';
 import { getAnnees, activerAnnee } from './services/api';
+import Accueil from './pages/Accueil';
 
 function App() {
-    const [page, setPage] = useState('annee');
+    const [page, setPage] = useState('accueil');
     const [annees, setAnnees] = useState([]);
     const [anneeSelectionnee, setAnneeSelectionnee] = useState(null);
 
@@ -49,6 +50,9 @@ function App() {
             </div>
 
             <nav style={{ marginBottom: '20px' }}>
+                <button onClick={() => setPage('accueil')} style={{ marginRight: '10px' }}>
+                    🏠 Accueil
+                </button>
                 <button onClick={() => setPage('annee')} style={{ marginRight: '10px' }}>
                     Année Scolaire
                 </button>
@@ -79,6 +83,7 @@ function App() {
             {page === 'notes' && <Notes />}
             {page === 'professeurs' && <Professeurs />}
             {page === 'moyenne' && <Moyenne />}
+            {page === 'accueil' && <Accueil />}
         </div>
     );
 }
