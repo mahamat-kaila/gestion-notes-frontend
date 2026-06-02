@@ -152,17 +152,17 @@ function Notes() {
                     {message && <p style={{ color: message.includes('✅') ? 'green' : 'red' }}>{message}</p>}
                     <table border="1" style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                        <tr style={{ background: '#f0f0f0' }}>
-                            <th>Matricule</th>
-                            <th>Nom</th>
-                            <th>Prénom</th>
+                        <tr style={{ background: '#1a237e' }}>
+                            <th style={{ color: 'white', padding: '12px 15px' }}>Matricule</th>
+                            <th style={{ color: 'white', padding: '12px 15px' }}>Nom</th>
+                            <th style={{ color: 'white', padding: '12px 15px' }}>Prénom</th>
                             {isConduite ? (
-                                <th>Note Conduite /20</th>
+                                <th style={{ color: 'white', padding: '12px 15px' }}>Note Conduite /20</th>
                             ) : (
                                 <>
-                                    <th>Devoir 1 /20</th>
-                                    <th>Devoir 2 /20</th>
-                                    <th>Composition /20</th>
+                                    <th style={{ color: 'white', padding: '12px 15px' }}>Devoir 1 /20</th>
+                                    <th style={{ color: 'white', padding: '12px 15px' }}>Devoir 2 /20</th>
+                                    <th style={{ color: 'white', padding: '12px 15px' }}>Composition /20</th>
                                 </>
                             )}
                         </tr>

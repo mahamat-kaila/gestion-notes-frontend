@@ -146,39 +146,42 @@ function Professeurs() {
                     <th>Téléphone</th>
                     <th>Email</th>
                     <th>Adresse</th>
-                    <th>Affectations</th>
+                    <th>Matière</th>
+                    <th>Classes</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody>
-                {professeurs.map((p) => (
-                    <tr key={p.id}>
-                        <td>{p.nom}</td>
-                        <td>{p.prenom}</td>
-                        <td>{p.telephone}</td>
-                        <td>{p.email}</td>
-                        <td>{p.adresse}</td>
-                        <td>
-                            {affectations
-                                .filter((a) => a.professeur && a.professeur.id === p.id)
-                                .map((a) => (
-                                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                        <span>{a.matiere.nom} → {a.classe.nom}</span>
-                                        <button
-                                            onClick={() => handleDesaffecter(a.id)}
-                                            style={{ background: 'red', color: 'white', padding: '2px 8px', fontSize: '11px' }}>
-                                            Désaffecter
-                                        </button>
-                                    </div>
-                                ))
-                            }
-                        </td>
-                        <td>
-                            <button onClick={() => handleEdit(p)}>Modifier</button>
-                            <button onClick={() => supprimerProfesseur(p.id)} style={{ marginLeft: '5px' }}>Supprimer</button>
-                        </td>
-                    </tr>
-                ))}
+                {professeurs.map((p) => {
+                    const affectationsProf = affectations.filter((a) => a.professeur && a.professeur.id === p.id);
+                    const matieres = [...new Set(affectationsProf.map((a) => a.matiere.nom))].join(', ');
+                    const classes = affectationsProf.map((a) => (
+                        <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '3px' }}>
+                            <span>{a.classe.nom}</span>
+                            <button
+                                onClick={() => handleDesaffecter(a.id)}
+                                style={{ background: 'red', color: 'white', padding: '1px 6px', fontSize: '11px', borderRadius: '4px' }}>
+                                ✕
+                            </button>
+                        </div>
+                    ));
+
+                    return (
+                        <tr key={p.id}>
+                            <td>{p.nom}</td>
+                            <td>{p.prenom}</td>
+                            <td>{p.telephone}</td>
+                            <td>{p.email}</td>
+                            <td>{p.adresse}</td>
+                            <td>{matieres || '-'}</td>
+                            <td>{classes.length > 0 ? classes : '-'}</td>
+                            <td>
+                                <button className="btn-modifier" onClick={() => handleEdit(p)}>✏️ Modifier</button>
+                                <button className="btn-supprimer" onClick={() => supprimerProfesseur(p.id)}>🗑️</button>
+                            </td>
+                        </tr>
+                    );
+                })}
                 </tbody>
             </table>
 
@@ -188,6 +191,13 @@ function Professeurs() {
                     <option value="">-- Choisir un professeur --</option>
                     {professeurs.map((p) => (
                         <option key={p.id} value={p.id}>{p.nom} {p.prenom}</option>
+                    ))}
+                </select><br />
+
+                <select name="classe" onChange={handleAffectationChange} required>
+                    <option value="">-- Choisir une classe --</option>
+                    {classes.map((c) => (
+                        <option key={c.id} value={c.id}>{c.nom}</option>
                     ))}
                 </select><br />
                 <select name="matiere" onChange={handleAffectationChange} required>
@@ -200,12 +210,6 @@ function Professeurs() {
                             <option key={m.id} value={m.id}>{m.nom}</option>
                         ))
                     }
-                </select><br />
-                <select name="classe" onChange={handleAffectationChange} required>
-                    <option value="">-- Choisir une classe --</option>
-                    {classes.map((c) => (
-                        <option key={c.id} value={c.id}>{c.nom}</option>
-                    ))}
                 </select><br />
                 <button type="submit">Affecter</button>
             </form>

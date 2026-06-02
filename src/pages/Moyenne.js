@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getEleves, getMoyenne, getNotesByEleve, getAffectationsByClasse, getRang, getClasses } from '../services/api';
-import logo from '../assets/logo.jpg';
+import { getEleves, getMoyenne, getNotesByEleve, getAffectationsByClasse, getRang, getClasses, createLog } from '../services/api';import logo from '../assets/logo.jpg';
 
 function Moyenne() {
     const [moyenneTrim1, setMoyenneTrim1] = useState(null);
@@ -347,7 +346,20 @@ function Moyenne() {
                 </button>
 
                 {moyenne !== null && eleveInfo && (
-                    <button onClick={() => window.print()} style={{ marginLeft: '10px', background: 'blue', color: 'white', padding: '8px 16px' }}>
+                    <button onClick={async () => {
+                        // Enregistrer le log
+                        const role = localStorage.getItem('role');
+                        if (role !== 'ADMIN') {
+                            await createLog({
+                                emailUtilisateur: localStorage.getItem('token') ? 'directeur' : '',
+                                nomUtilisateur: localStorage.getItem('nom') + ' ' + localStorage.getItem('prenom'),
+                                nomEleve: eleveInfo.nom + ' ' + eleveInfo.prenom,
+                                matriculeEleve: eleveInfo.matricule,
+                                trimestre: trimestreSelectionne,
+                            });
+                        }
+                        window.print();
+                    }} style={{ marginLeft: '10px', background: 'blue', color: 'white', padding: '8px 16px' }}>
                         🖨️ Imprimer le bulletin
                     </button>
                 )}
